@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'login_screen.dart';
+import '../utils/encryption_utils.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -61,6 +64,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+// Verify OTP and then proceed
   Future<void> _verifyOtpAndRegister() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,19 +78,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      //Verify OTP
       final credential = PhoneAuthProvider.credential(
         verificationId: _verificationId,
         smsCode: _otpController.text,
       );
       await FirebaseAuth.instance.signInWithCredential(credential);
+      // encrypt password
+      final encryptedPassword =
+          EncryptionUtils.encryptPassword(_passwordController.text);
+      print("Registering password: ${_passwordController.text}");
+      print("Encrypted Password: $encryptedPassword");
+
+      // Save phone and password to Firestore
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw FirebaseAuthException(code: 'no-user', message: 'User not found');
+      }
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
+        'phone': _phoneController.text,
+        'password': encryptedPassword, // encrypted password
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // move to login screen when register successfully
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Registration Successful')),
       );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Verification failed: $e')),
-      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-verification-code') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid OTP. Please try again.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification failed: $e')),
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -208,23 +241,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     height: 50,
                     width: 200,
                     child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _isOtpSent ? _verifyOtpAndRegister() : _sendOtp();
-                        }
-                      },
-                      child: Text(
-                        _isOtpSent ? 'Register' : 'Send OTP',
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontFamily: 'Itim',
-                        ),
-                      ),
+                      onPressed: _isOtpSent ? _verifyOtpAndRegister : _sendOtp,
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              _isOtpSent ? 'Register' : 'Send OTP',
+                              style: const TextStyle(
+                                  fontSize: 30, fontFamily: 'Itim'),
+                            ),
                     ),
                   ),
                 ),
-                if (_isLoading)
-                  const Center(child: CircularProgressIndicator()),
               ],
             ),
           )),

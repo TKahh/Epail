@@ -17,7 +17,7 @@ class HomeScreen extends StatelessWidget {
               Stack(
                 children: [
                   Text(
-                    'EPOIL',
+                    'EPAIL',
                     style: TextStyle(
                       fontSize: 90,
                       fontWeight: FontWeight.bold,
@@ -30,7 +30,7 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const Text(
-                    'EPOIL',
+                    'EPAIL',
                     style: TextStyle(
                       fontSize: 90,
                       fontFamily: 'Itim',
