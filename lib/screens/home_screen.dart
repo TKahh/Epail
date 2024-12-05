@@ -1,9 +1,36 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+// import '../services/email_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // email test sample
+  // final emailService = EmailService();
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _addSampleEmail();
+  // }
+  // Future<void> _addSampleEmail() async {
+  //   try {
+  //     await emailService.addSampleEmail();
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Sample email added successfully!')),
+  //     );
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to add sample email: $e')),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

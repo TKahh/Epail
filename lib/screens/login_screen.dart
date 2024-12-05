@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'register_screen.dart';
 import 'main_screen.dart';
 import '../utils/encryption_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -51,13 +53,13 @@ class _LoginScreenState extends State<LoginScreen> {
         final storedEncryptedPassword = userData['password'];
         final enteredPassword = _passwordController.text;
 
-        
         // Decrypt the stored password for comparison
-        final decryptedPassword = EncryptionUtils.decryptPassword(storedEncryptedPassword);
+        final decryptedPassword =
+            EncryptionUtils.decryptPassword(storedEncryptedPassword);
 
-        print("Logging in password: ${_passwordController.text}");
-        print('Stored Encrypted Password: $storedEncryptedPassword');
-        
+        // debug purpose
+        // print("Logging in password: ${_passwordController.text}");
+        // print('Stored Encrypted Password: $storedEncryptedPassword');
 
         if (decryptedPassword != enteredPassword) {
           throw Exception('Wrong password provided.');
@@ -105,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(bottom: 100, left: 100, right: 100),
         child: Form(
           key: _formKey,
           child: Column(
