@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'main_screen.dart';
 import '../utils/encryption_utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 
 class LoginScreen extends StatefulWidget {

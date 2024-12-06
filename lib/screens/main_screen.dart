@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:urmail/screens/compose_email_screen.dart';
+import 'package:urmail/screens/profile_screen.dart';
 
 import 'email_detail_screen.dart';
 
@@ -72,7 +73,10 @@ class MainScreen extends StatelessWidget {
               leading: const Icon(Icons.account_box_rounded),
               title: const Text('Profile'),
               onTap: () {
-                // Handle Inbox tap
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ProfileScreen()));
               },
             ),
             ListTile(

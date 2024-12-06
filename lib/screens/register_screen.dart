@@ -91,7 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'password': encryptedPassword, // encrypted password
         'name':
             'User ${_phoneController.text}', // Default name, can ask for user input
-        'profilePicture': '',
+        'profilePictureBase64': '',
         'createdAt': FieldValue.serverTimestamp(),
       });
 
