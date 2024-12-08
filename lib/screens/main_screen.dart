@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:urmail/screens/compose_email_screen.dart';
 import 'package:urmail/screens/profile_screen.dart';
 
+import '../services/email_service.dart';
 import 'email_detail_screen.dart';
 import 'home_screen.dart';
 
@@ -13,7 +14,13 @@ class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
-    final phone = currentUser?.phoneNumber;
+    
+
+    if (currentUser == null) {
+      return const Center(
+        child: Text('No user is logged in'),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -136,57 +143,47 @@ class MainScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: StreamBuilder<DocumentSnapshot>(
+      body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(phone)
+            .collection('emails')
+            .where('to', arrayContains: currentUser.phoneNumber) // Lọc email theo số điện thoại người nhận
+            .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData ||
-              snapshot.data == null ||
-              !snapshot.data!.exists) {
-            return const Center(child: Text('No user data found'));
-          }
-          final userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-
-          final emails = userData['emails'] as List<dynamic>?;
-
-          if (emails == null || emails.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text('No emails found'));
           }
 
-          // Hiển thị email đầu tiên trong danh sách
-          final latestEmail = emails.first;
+          final emails = snapshot.data!.docs;
 
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Latest Email:',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          return ListView.builder(
+            itemCount: emails.length,
+            itemBuilder: (context, index) {
+              final email = emails[index].data() as Map<String, dynamic>;
+
+              return Card(
+                child: ListTile(
+                  title: Text(email['subject'] ?? 'No Subject'),
+                  subtitle: Text('From: ${email['from']}'),
+                  trailing: const Icon(Icons.arrow_forward),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EmailDetailScreen(email: email),
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'From: ${latestEmail['from']}', // Thay đổi key theo cấu trúc dữ liệu của bạn
-                  style: const TextStyle(fontSize: 20),
-                ),
-                Text(
-                  'Subject: ${latestEmail['subject']}',
-                  style: const TextStyle(fontSize: 20),
-                ),
-                Text(
-                  'Body: ${latestEmail['body']}',
-                  style: const TextStyle(fontSize: 20),
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
+      
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
         child: Align(

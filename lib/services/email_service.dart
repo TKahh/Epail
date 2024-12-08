@@ -1,18 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EmailService {
-  // sample email tets
-  Future<void> addSampleEmail() async {
+  Future<void> sendEmail(String fromPhone, List<String> toPhones,
+      String subject, String body) async {
     await FirebaseFirestore.instance.collection('emails').add({
-      'from': 'UID_sender',
-      'to': ['UID_reciever'],
-      'subject': 'Welcome to EPAIL!',
-      'body': 'This is my first mail. Please concid.',
-      'attachments': [],
+      'from': fromPhone,
+      'to': toPhones,
+      'subject': subject,
+      'body': body,
       'timestamp': FieldValue.serverTimestamp(),
-      'labels': ['welcome'],
       'isRead': false,
-      'isDraft': false,
+      'labels': ['inbox'],
     });
+  }
+
+  Stream<QuerySnapshot> getEmails(String phone) {
+    return FirebaseFirestore.instance
+        .collection('emails')
+        .where('to', arrayContains: phone)
+        .orderBy('timestamp', descending: true)
+        .snapshots();
   }
 }
