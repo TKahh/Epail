@@ -1,24 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 
 class EmailService {
-  Future<void> sendEmail(String fromPhone, List<String> toPhones,
-      String subject, String body) async {
-    await FirebaseFirestore.instance.collection('emails').add({
-      'from': fromPhone,
-      'to': toPhones,
-      'subject': subject,
-      'body': body,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isRead': false,
-      'labels': ['inbox'],
-    });
-  }
+  Future<void> sendEmail(
+      String fromEmail,
+      List<String> to,
+      List<String> cc,
+      List<String> bcc,
+      String subject,
+      String body,{
+        List<PlatformFile>? attachments,
+      }) async {
+    // Add your email sending logic here, integrating attachments if necessary
+    print('Sending email from: $fromEmail');
+    print('To: $to');
+    print('CC: $cc');
+    print('BCC: $bcc');
+    print('Subject: $subject');
+    print('Body: $body');
+    if (attachments != null) {
+      print('Attachments: ${attachments.map((file) => file.name).join(', ')}');
+    }
 
-  Stream<QuerySnapshot> getEmails(String phone) {
-    return FirebaseFirestore.instance
-        .collection('emails')
-        .where('to', arrayContains: phone)
-        .orderBy('timestamp', descending: true)
-        .snapshots();
+    // For example, sending to an API or email service provider
   }
 }
