@@ -20,7 +20,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     setState(() => _isLoading = true);
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: '+84${_phoneController.text}', // Thêm mã quốc gia nếu cần
+        phoneNumber: '+84${_phoneController.text}',
         verificationCompleted: (PhoneAuthCredential credential) async {
           await FirebaseAuth.instance.signInWithCredential(credential);
         },
@@ -86,12 +86,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         // }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Password changed successfully!')),
+          const SnackBar(content: Text('Password changed successfully!')),
         );
       } else {
         // print('Error: User is null');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: User not found')),
+          const SnackBar(content: Text('Error: User not found')),
         );
       }
     } catch (e) {

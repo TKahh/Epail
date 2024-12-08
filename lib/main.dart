@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/main_screen.dart';
+// import 'utils/phone_normalization.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,7 @@ void main() async {
     appId: "1:175272769832:web:69fdd7f23cca999a38781d",
     messagingSenderId: "175272769832",
   ));
+  // await normalizePhoneNumbers();
   runApp(const MainApp());
 }
 
@@ -39,10 +41,8 @@ class MainApp extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasData) {
-            // User is logged in, navigate to main_screen
             return const MainScreen();
           } else {
-            // User is not logged in, navigate to home_screen
             return const HomeScreen();
           }
         },

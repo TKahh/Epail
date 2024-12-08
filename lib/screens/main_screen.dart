@@ -1,15 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:urmail/screens/compose_email_screen.dart';
 import 'package:urmail/screens/profile_screen.dart';
 
 import 'email_detail_screen.dart';
+import 'home_screen.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final phone = currentUser?.phoneNumber;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -110,54 +115,75 @@ class MainScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
-              onTap: () {
-                // Handle Logout tap
+              onTap: () async {
+                try {
+                  // Sign out from Firebase
+                  await FirebaseAuth.instance.signOut();
+
+                  // Navigate back to the home screen
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    (route) => false,
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Logout failed: $e')),
+                  );
+                }
               },
             ),
           ],
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('emails')
-            .orderBy('timestamp', descending: true)
+            .collection('users')
+            .doc(phone)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData ||
+              snapshot.data == null ||
+              !snapshot.data!.exists) {
+            return const Center(child: Text('No user data found'));
+          }
+          final userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+
+          final emails = userData['emails'] as List<dynamic>?;
+
+          if (emails == null || emails.isEmpty) {
             return const Center(child: Text('No emails found'));
           }
 
-          final emails = snapshot.data!.docs;
+          // Hiển thị email đầu tiên trong danh sách
+          final latestEmail = emails.first;
 
-          return ListView.builder(
-            itemCount: emails.length,
-            itemBuilder: (context, index) {
-              final email = emails[index];
-              return ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.email),
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Latest Email:',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-                title: Text(email['subject'] ?? 'No Subject'),
-                subtitle: Text(
-                  (email['body'] ?? '').length > 50
-                      ? email['body'].substring(0, 50) + '...'
-                      : email['body'] ?? '',
+                const SizedBox(height: 16),
+                Text(
+                  'From: ${latestEmail['from']}', // Thay đổi key theo cấu trúc dữ liệu của bạn
+                  style: const TextStyle(fontSize: 20),
                 ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EmailDetailScreen(
-                        emailId: email.id,
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+                Text(
+                  'Subject: ${latestEmail['subject']}',
+                  style: const TextStyle(fontSize: 20),
+                ),
+                Text(
+                  'Body: ${latestEmail['body']}',
+                  style: const TextStyle(fontSize: 20),
+                ),
+              ],
+            ),
           );
         },
       ),

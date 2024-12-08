@@ -1,4 +1,4 @@
-import 'dart:convert'; // To encode and decode Base64
+import 'dart:convert';
 import 'dart:html' as html;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,7 +17,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _nameController = TextEditingController();
-  String _profilePictureBase64 = ''; // use this to save the profile picture
+  String _profilePictureBase64 = ''; // save the profile picture
   bool _isLoading = false;
 
   @override

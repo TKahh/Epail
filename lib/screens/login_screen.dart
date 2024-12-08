@@ -1,9 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
 import 'register_screen.dart';
 import 'main_screen.dart';
-import '../utils/encryption_utils.dart';
+// import '../utils/encryption_utils.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -24,62 +25,30 @@ class _LoginScreenState extends State<LoginScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-// Phone number normalization function
-  String _normalizePhoneNumber(String phone) {
-    return phone;
-  }
 
   Future<void> _signIn() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-      try {
-        String normalizedPhone = _normalizePhoneNumber(_phoneController.text);
+  if (_formKey.currentState!.validate()) {
+    setState(() => _isLoading = true);
+    final authService = AuthService();
 
-        // take user data from Firestore
-        final userSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where('phone', isEqualTo: normalizedPhone)
-            .get();
-
-        if (userSnapshot.docs.isEmpty) {
-          throw Exception('No user found for this phone number.');
-        }
-
-        // Check password
-        final userData = userSnapshot.docs.first.data();
-        final storedEncryptedPassword = userData['password'];
-        final enteredPassword = _passwordController.text;
-
-        // Decrypt the stored password for comparison
-        final decryptedPassword =
-            EncryptionUtils.decryptPassword(storedEncryptedPassword);
-
-        // debug purpose
-        // print("Logging in password: ${_passwordController.text}");
-        // print('Stored Encrypted Password: $storedEncryptedPassword');
-
-        if (decryptedPassword != enteredPassword) {
-          throw Exception('Wrong password provided.');
-        }
-
-        // move to MainScreen if login successfully
+    await authService.signIn(
+      phoneNumber: _phoneController.text,
+      enteredPassword: _passwordController.text,
+      onSuccess: () {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen()),
         );
-
         _showSnackbar('Login Successful');
-      } catch (e) {
-        _showSnackbar('Login Failed: $e');
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+      },
+      onError: (error) {
+        _showSnackbar(error);
+      },
+    );
+
+    setState(() => _isLoading = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {

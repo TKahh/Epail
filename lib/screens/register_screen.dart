@@ -1,6 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 import 'login_screen.dart';
 import '../utils/encryption_utils.dart';
 
@@ -28,38 +29,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  
-
   Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
 
-    try {
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: '+84${_phoneController.text}',
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          await FirebaseAuth.instance.signInWithCredential(credential);
-          _showSnackBar('Phone verified automatically');
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          _showSnackBar('Verification failed: ${e.message}');
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          setState(() {
-            _verificationId = verificationId;
-            _isOtpSent = true;
-          });
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
+    setState(() => _isLoading = true);
+    final authService = AuthService();
+
+    await authService.sendOtp(
+      phoneNumber: '+84${_phoneController.text}',
+      onCodeSent: (verificationId) {
+        setState(() {
           _verificationId = verificationId;
-        },
-        timeout: const Duration(seconds: 30), // Time wait for OTP
-      );
-    } catch (e) {
-      _showSnackBar('Failed to send OTP: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
+          _isOtpSent = true;
+        });
+      },
+      onError: (error) {
+        _showSnackBar(error);
+      },
+    );
+
+    setState(() => _isLoading = false);
   }
 
 // Verify OTP and then proceed
@@ -67,46 +56,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+    final authService = AuthService();
 
-    try {
-      //Verify OTP
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId,
-        smsCode: _otpController.text,
-      );
-      await FirebaseAuth.instance.signInWithCredential(credential);
-      // encrypt password
-      final encryptedPassword =
-          EncryptionUtils.encryptPassword(_passwordController.text);
-      // print("Registering password: ${_passwordController.text}");
-      // print("Encrypted Password: $encryptedPassword");
+    await authService.verifyOtpAndRegister(
+      verificationId: _verificationId,
+      smsCode: _otpController.text,
+      phoneNumber: _phoneController.text,
+      encryptedPassword:
+          EncryptionUtils.encryptPassword(_passwordController.text),
+      onSuccess: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+        _showSnackBar('Registration Successful');
+      },
+      onError: (error) {
+        _showSnackBar(error);
+      },
+    );
 
-      // Save phone and password to Firestore
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) {
-        throw FirebaseAuthException(code: 'no-user', message: 'User not found');
-      }
-      await FirebaseFirestore.instance.collection('users').doc(userId).set({
-        'phone': _phoneController.text,
-        'password': encryptedPassword, // encrypted password
-        'name':
-            'User ${_phoneController.text}', // Default name, can ask for user input
-        'profilePictureBase64': '',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      // move to login screen when register successfully
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-
-      _showSnackBar('Registration Successful');
-    } catch (e) {
-      _showSnackBar('Verification failed: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    setState(() => _isLoading = false);
   }
 
   @override
