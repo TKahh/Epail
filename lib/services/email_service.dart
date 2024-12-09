@@ -10,6 +10,7 @@ class EmailService {
       'body': body,
       'timestamp': FieldValue.serverTimestamp(),
       'isRead': false,
+      'isTrashed': false,
       'labels': ['inbox'],
     });
   }
