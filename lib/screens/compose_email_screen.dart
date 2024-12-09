@@ -91,7 +91,16 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Compose Email'),
+        title: const Text(
+          'COMPOSE EMAIL',
+          style: TextStyle(
+            fontSize: 50,
+            fontFamily: 'Itim',
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.send),

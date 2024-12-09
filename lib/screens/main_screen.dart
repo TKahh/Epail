@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:urmail/screens/compose_email_screen.dart';
+import 'package:urmail/screens/trash_screen.dart';
 import 'package:urmail/screens/profile_screen.dart';
 
 import '../services/email_service.dart';
@@ -11,11 +12,24 @@ import 'home_screen.dart';
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
+  void _showPopupMenu(BuildContext context, DocumentSnapshot emailDoc) {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(10.0, 10.0, 10.0, 10.0),
+      items: [
+        PopupMenuItem(
+          child: const Text('Move to Trash'),
+          onTap: () {
+            emailDoc.reference.update({'isTrashed': true});
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
-    
-
     if (currentUser == null) {
       return const Center(
         child: Text('No user is logged in'),
@@ -109,14 +123,19 @@ class MainScreen extends StatelessWidget {
               leading: const Icon(Icons.delete),
               title: const Text('Trash'),
               onTap: () {
-                // Handle Trash tap
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TrashScreen(),
+                  ),
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Setting'),
               onTap: () {
-                // Handle Logout tap
+                // Handle Setting tap
               },
             ),
             ListTile(
@@ -146,7 +165,9 @@ class MainScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('emails')
-            .where('to', arrayContains: currentUser.phoneNumber) // Lọc email theo số điện thoại người nhận
+            .where('to',
+                arrayContains: currentUser
+                    .phoneNumber) // Lọc email theo số điện thoại người nhận
             .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
@@ -163,6 +184,7 @@ class MainScreen extends StatelessWidget {
             itemCount: emails.length,
             itemBuilder: (context, index) {
               final email = emails[index].data() as Map<String, dynamic>;
+              final emailDoc = emails[index];
 
               return Card(
                 child: ListTile(
@@ -177,13 +199,15 @@ class MainScreen extends StatelessWidget {
                       ),
                     );
                   },
+                  onLongPress: () {
+                    _showPopupMenu(context, emailDoc);
+                  },
                 ),
               );
             },
           );
         },
       ),
-      
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
         child: Align(
