@@ -104,7 +104,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your phone number';
                     }
-                    if (!RegExp(r'^\+?[0-9]{11,}$').hasMatch(value)) {
+                    if (!RegExp(r'^\+?[0-9]{9,11}$').hasMatch(value)) {
                       return 'Enter a valid phone number';
                     }
                     return null;

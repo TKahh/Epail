@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
 import '../services/email_service.dart';
 
 class ComposeEmailScreen extends StatefulWidget {
@@ -15,6 +19,7 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
   final TextEditingController _toController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
+  final List<File> _attachments = [];
 
   @override
   void dispose() {
@@ -31,6 +36,26 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
     return phone;
   }
 
+  Future<void> _pickAttachments() async {
+    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
+    if (result != null) {
+      setState(() {
+        _attachments.addAll(result.paths.map((path) => File(path!)));
+      });
+    }
+  }
+
+  Future<bool> _validateRecipients(List<String> toPhones) async {
+    final usersCollection = FirebaseFirestore.instance.collection('users');
+    for (String phone in toPhones) {
+      final snapshot = await usersCollection.doc(phone).get();
+      if (!snapshot.exists) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   void _sendEmail() async {
     final currentUser = FirebaseAuth.instance.currentUser;
 
@@ -40,24 +65,17 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
       );
       return;
     }
-
-    final senderSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .get();
-
-    final fromPhone = senderSnapshot.data()?['phone'];
+    final fromPhone = currentUser.phoneNumber;
     if (fromPhone == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to fetch sender phone number')),
       );
       return;
     }
-
     final toPhones = _toController.text
         .trim()
         .split(',')
-        .map((phone) => normalizePhone(phone.trim()))
+        .map((phone) => AuthService().normalizePhone(phone.trim()))
         .toList();
     final subject = _subjectController.text.trim();
     final body = _bodyController.text.trim();
@@ -68,17 +86,27 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
       );
       return;
     }
+    if (!await _validateRecipients(toPhones)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Some recipients do not exist')),
+      );
+      return;
+    }
 
     try {
-      await EmailService().sendEmail(fromPhone, toPhones, subject, body);
+      await EmailService().sendEmail(fromPhone, toPhones, subject, body,
+          attachments: _attachments);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email sent successfully!')),
       );
+      setState(() {
+        _toController.clear();
+        _subjectController.clear();
+        _bodyController.clear();
+        _attachments.clear();
+      });
 
-      _toController.clear();
-      _subjectController.clear();
-      _bodyController.clear();
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,6 +169,34 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
                 maxLines: null,
                 expands: true,
                 textAlignVertical: TextAlignVertical.top,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.attach_file),
+              label: const Text("Attach Files",
+                  style: TextStyle(fontFamily: 'Itim')),
+              onPressed: _pickAttachments,
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _attachments.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading: const Icon(Icons.file_present),
+                    title: Text(_attachments[index].path.split('/').last),
+                    trailing: IconButton(
+                      onPressed: () {
+                        setState(
+                          () {
+                            _attachments.removeAt(index);
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.remove_circle),
+                    ),
+                  );
+                },
               ),
             ),
           ],

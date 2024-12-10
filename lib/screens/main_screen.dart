@@ -10,7 +10,9 @@ import 'email_detail_screen.dart';
 import 'home_screen.dart';
 
 class MainScreen extends StatelessWidget {
-  const MainScreen({super.key});
+  final bool showSentEmails;
+
+  const MainScreen({super.key, this.showSentEmails = false});
 
   void _showPopupMenu(BuildContext context, DocumentSnapshot emailDoc) {
     showMenu(
@@ -37,11 +39,23 @@ class MainScreen extends StatelessWidget {
       );
     }
 
+    // Start with the base query
+    var query = FirebaseFirestore.instance
+        .collection('emails')
+        .orderBy('timestamp', descending: true);
+
+    // Modify the query based on whether we're showing sent or received emails
+    if (showSentEmails) {
+        query = query.where('from', isEqualTo: currentUser.phoneNumber);
+    } else {
+        query = query.where('to', arrayContains: currentUser.phoneNumber);
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'EPAIL',
-          style: TextStyle(
+        title: Text(
+          showSentEmails ? 'Sent Emails' : 'Inbox',
+          style: const TextStyle(
             fontSize: 50,
             fontFamily: 'Itim',
             color: Colors.red,
@@ -110,14 +124,26 @@ class MainScreen extends StatelessWidget {
               leading: const Icon(Icons.inbox),
               title: const Text('Inbox'),
               onTap: () {
-                // Handle Inbox tap
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const MainScreen(showSentEmails: false),
+                  ),
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.send),
               title: const Text('Sent'),
               onTap: () {
-                // Handle Sent tap
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const MainScreen(showSentEmails: true),
+                  ),
+                );
               },
             ),
             ListTile(
@@ -138,7 +164,8 @@ class MainScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const SettingsScreen()),
                 );
               },
             ),
@@ -160,13 +187,7 @@ class MainScreen extends StatelessWidget {
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('emails')
-            .where('to',
-                arrayContains: currentUser
-                    .phoneNumber) // Lọc email theo số điện thoại người nhận
-            .orderBy('timestamp', descending: true)
-            .snapshots(),
+        stream: query.snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -186,7 +207,9 @@ class MainScreen extends StatelessWidget {
               return Card(
                 child: ListTile(
                   title: Text(email['subject'] ?? 'No Subject'),
-                  subtitle: Text('From: ${email['from']}'),
+                  subtitle: Text(showSentEmails
+                      ? 'To: ${email['to'].join(', ')}'
+                      : 'From: ${email['from']}'),
                   trailing: const Icon(Icons.arrow_forward),
                   onTap: () {
                     Navigator.push(

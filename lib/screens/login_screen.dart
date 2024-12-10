@@ -86,14 +86,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: '+84123456789',
+                  labelText: 'Phone Number',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your phone number.';
                   }
-                  if (!RegExp(r'^\+?[0-9]{11,}$').hasMatch(value)) {
+                  if (!RegExp(r'^\+?[0-9]{9,11}$').hasMatch(value)) {
                     return 'Enter a valid phone number.';
                   }
                   return null;
