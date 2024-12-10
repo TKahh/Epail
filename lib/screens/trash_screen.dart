@@ -69,7 +69,7 @@ class _TrashScreenState extends State<TrashScreen> {
                           // Restore the email
                           FirebaseFirestore.instance
                               .collection('emails')
-                              .doc(email['id'])
+                              .doc(trashedEmails[index].id)
                               .update({'isTrashed': false});
                         },
                       ),
@@ -79,7 +79,7 @@ class _TrashScreenState extends State<TrashScreen> {
                           // Permanently delete the email
                           FirebaseFirestore.instance
                               .collection('emails')
-                              .doc(email['id'])
+                              .doc(trashedEmails[index].id)
                               .delete();
                         },
                       ),
