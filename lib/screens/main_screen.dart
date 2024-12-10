@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:urmail/screens/sent_screen.dart';
 import '../screens/settings_screen.dart';
 import '../services/email_service.dart';
 import 'package:urmail/screens/compose_email_screen.dart';
@@ -117,7 +118,10 @@ class MainScreen extends StatelessWidget {
               leading: const Icon(Icons.send),
               title: const Text('Sent'),
               onTap: () {
-                // Handle Sent tap
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SentScreen()));
               },
             ),
             ListTile(
@@ -138,7 +142,8 @@ class MainScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const SettingsScreen()),
                 );
               },
             ),

@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:urmail/screens/home_screen.dart';
 import 'screens/main_screen.dart';
 import 'firebase_options.dart';
 // import 'utils/phone_normalization.dart';
@@ -53,7 +54,6 @@ class _MainAppState extends State<MainApp> {
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-
           User? currentUser = FirebaseAuth.instance.currentUser;
 
           // Check if user is logged in or not
