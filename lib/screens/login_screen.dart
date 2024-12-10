@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'main_screen.dart';
 // import '../utils/encryption_utils.dart';
@@ -25,28 +26,28 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signIn() async {
-  if (_formKey.currentState!.validate()) {
-    setState(() => _isLoading = true);
-    final authService = AuthService();
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+      final authService = AuthService();
 
-    await authService.signIn(
-      phoneNumber: _phoneController.text,
-      enteredPassword: _passwordController.text,
-      onSuccess: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
-        _showSnackbar('Login Successful');
-      },
-      onError: (error) {
-        _showSnackbar(error);
-      },
-    );
+      await authService.signIn(
+        phoneNumber: _phoneController.text,
+        enteredPassword: _passwordController.text,
+        onSuccess: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+          _showSnackbar('Login Successful');
+        },
+        onError: (error) {
+          _showSnackbar(error);
+        },
+      );
 
-    setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -85,14 +86,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: 'Phone Number',
+                  labelText: '+84123456789',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your phone number.';
                   }
-                  if (!RegExp(r'^\+?[0-9]{10,}$').hasMatch(value)) {
+                  if (!RegExp(r'^\+?[0-9]{11,}$').hasMatch(value)) {
                     return 'Enter a valid phone number.';
                   }
                   return null;
@@ -142,7 +143,12 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: TextButton(
                   onPressed: () {
-
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordScreen(),
+                      ),
+                    );
                   },
                   child: const Text(
                     'Forgot Password?',

@@ -19,8 +19,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Future<void> _sendOtp() async {
     setState(() => _isLoading = true);
     try {
+      final phoneNumber =
+          '+84${_phoneController.text.trim()}'; // Ensure proper formatting
+      if (phoneNumber.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid phone number')),
+        );
+        return;
+      }
       await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: '+84${_phoneController.text}',
+        phoneNumber: phoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
           await FirebaseAuth.instance.signInWithCredential(credential);
         },
@@ -61,33 +69,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       // Update password
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final userId = user.uid;
+        final phone = user.phoneNumber; // Get the phone number
 
-        // Cập nhật mật khẩu mới vào Firestore
-        final encryptedPassword =
-            _newPasswordController.text; // Có thể mã hóa nếu cần
+        // Save new pass to firebase
+        final encryptedPassword = _newPasswordController.text;
         await FirebaseFirestore.instance
             .collection('users')
-            .doc(userId)
+            .doc(phone)
             .update({'password': encryptedPassword});
-        // print('Password updated successfully in Firestore: $encryptedPassword');
-
-        // access and print pass from Firestore
-        // final userDoc = await FirebaseFirestore.instance
-        //     .collection('users')
-        //     .doc(userId)
-        //     .get();
-
-        // if (userDoc.exists) {
-        //   final updatedPassword = userDoc['password'];
-        //   print('Password in Firestore after update: $updatedPassword');
-        // } else {
-        //   print('User document not found in Firestore.');
-        // }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password changed successfully!')),
         );
+        Navigator.pop(context);
       } else {
         // print('Error: User is null');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -99,6 +93,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to change password: $e')),
       );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -107,12 +103,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Change Password')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 80),
         child: Column(
           children: [
             TextField(
               controller: _phoneController,
-              decoration: const InputDecoration(labelText: 'Phone Number'),
+              decoration: const InputDecoration(
+                labelText: 'Phone Number',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -124,13 +123,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             const SizedBox(height: 16),
             TextField(
               controller: _otpController,
-              decoration: const InputDecoration(labelText: 'OTP'),
+              decoration: const InputDecoration(
+                labelText: 'OTP',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _newPasswordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'New Password'),
+              decoration: const InputDecoration(
+                labelText: 'New Password',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(

@@ -8,12 +8,21 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String normalizePhone(String phone) {
+    phone = phone.trim();
     if (phone.startsWith('+')) {
-      return phone;
+      if (RegExp(r'^\+\d{9,11}$').hasMatch(phone)) {
+        return phone;
+      }
+      throw const FormatException('Invalid phone number format');
     } else if (phone.startsWith('0')) {
-      return '+84${phone.substring(1)}';
+      String normalized = '+84${phone.substring(1)}';
+      if (RegExp(r'^\+\d{9,11}$').hasMatch(normalized)) {
+        return normalized;
+      }
+      throw const FormatException('Invalid phone number format');
+    } else {
+      throw const FormatException('Phone number must start with "+" or "0".');
     }
-    throw const FormatException('Invalid phone number format');
   }
 
   // send OTP
@@ -63,11 +72,6 @@ class AuthService {
       );
       await _auth.signInWithCredential(credential);
 
-      // Save user info into Firestore
-      // final userId = _auth.currentUser?.phoneNumber;
-      // if (userId == null) {
-      //   throw FirebaseAuthException(code: 'no-user', message: 'User not found');
-      // }
       await _firestore.collection('users').doc(normalizedPhone).set({
         'phone': normalizedPhone,
         'password': encryptedPassword,
@@ -126,21 +130,33 @@ class AuthService {
       onError('Login failed: $e');
     }
   }
-  // Future<void> signInWithOtp({
-  //   required String verificationId,
-  //   required String smsCode,
-  //   required Function onSuccess,
-  //   required Function(String error) onError,
-  // }) async {
-  //   try {
-  //     final credential = PhoneAuthProvider.credential(
-  //       verificationId: verificationId,
-  //       smsCode: smsCode,
-  //     );
-  //     await _auth.signInWithCredential(credential);
-  //     onSuccess();
-  //   } catch (e) {
-  //     onError('Login failed: $e');
-  //   }
-  // }
+
+  Future<void> verifyOtpAndResetPassword({
+    required String verificationId,
+    required String smsCode,
+    required String phoneNumber,
+    required String encryptedPassword,
+    required Function onSuccess,
+    required Function(String error) onError,
+  }) async {
+    try {
+      final normalizedPhone = normalizePhone(phoneNumber);
+
+      // Verify OTP
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      await _auth.signInWithCredential(credential);
+
+      // Update password in Firestore
+      await _firestore.collection('users').doc(normalizedPhone).update({
+        'password': encryptedPassword,
+      });
+
+      onSuccess();
+    } catch (e) {
+      onError('Password reset failed: $e');
+    }
+  }
 }
