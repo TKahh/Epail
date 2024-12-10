@@ -42,6 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _verificationId = verificationId;
           _isOtpSent = true;
         });
+        _showSnackBar('OTP sent successfully!');
       },
       onError: (error) {
         _showSnackBar(error);
