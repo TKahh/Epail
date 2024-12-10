@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../screens/settings_screen.dart';
+import '../services/email_service.dart';
 import 'package:urmail/screens/compose_email_screen.dart';
 import 'package:urmail/screens/trash_screen.dart';
 import 'package:urmail/screens/profile_screen.dart';
-
 import 'email_detail_screen.dart';
 import 'home_screen.dart';
 
@@ -52,9 +53,9 @@ class MainScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // Navigate to settings screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings tapped')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
@@ -133,9 +134,12 @@ class MainScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.settings),
-              title: const Text('Setting'),
+              title: const Text('Settings'),
               onTap: () {
-                // Handle setting tap
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
               },
             ),
             ListTile(
