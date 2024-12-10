@@ -19,6 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   String _profilePictureBase64 = ''; // save the profile picture
   bool _isLoading = false;
+  String? phone;
 
   @override
   void initState() {
@@ -29,10 +30,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserProfile() async {
     setState(() => _isLoading = true);
     try {
-      final userId = _auth.currentUser?.uid;
-      if (userId == null) return;
+      final user = _auth.currentUser;
+      if (user == null) return;
+      phone = user.phoneNumber;
+      if (phone == null) return;
 
-      final doc = await _firestore.collection('users').doc(userId).get();
+      final doc = await _firestore.collection('users').doc(phone).get();
       if (doc.exists) {
         final data = doc.data();
         _nameController.text = data?['name'] ?? '';
@@ -67,12 +70,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await reader.onLoadEnd.first;
 
       final base64Image = reader.result as String;
-      final userId = _auth.currentUser?.uid;
-
-      if (userId == null) return;
 
       // savee Base64 to Firestore
-      await _firestore.collection('users').doc(userId).update({
+      await _firestore.collection('users').doc(phone).update({
         'profilePictureBase64': base64Image,
       });
 
@@ -91,10 +91,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _updateName() async {
     setState(() => _isLoading = true);
     try {
-      final userId = _auth.currentUser?.uid;
-      if (userId == null) return;
+      if (phone == null) return;
 
-      await _firestore.collection('users').doc(userId).update({
+      await _firestore.collection('users').doc(phone).update({
         'name': _nameController.text,
       });
 
@@ -115,7 +114,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text(
+          'PROFILE',
+          style: TextStyle(
+            fontSize: 50,
+            fontFamily: 'Itim',
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
       ),
       body: _isLoading
@@ -153,7 +160,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _updateName,
-                    child: const Text('Update Name'),
+                    child: const Text(
+                      'Update Name',
+                      style: TextStyle(fontSize: 30, fontFamily: 'Itim'),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -165,7 +175,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     },
-                    child: const Text('Change Password'),
+                    child: const Text(
+                      'Change Password',
+                      style: TextStyle(fontFamily: 'Itim'),
+                    ),
                   ),
                 ],
               ),
