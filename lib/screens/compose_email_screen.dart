@@ -13,12 +13,16 @@ class ComposeEmailScreen extends StatefulWidget {
 
 class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
   final TextEditingController _toController = TextEditingController();
+  final TextEditingController _ccController = TextEditingController();
+  final TextEditingController _bccController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
 
   @override
   void dispose() {
     _toController.dispose();
+    _ccController.dispose();
+    _bccController.dispose();
     _subjectController.dispose();
     _bodyController.dispose();
     super.dispose();
@@ -59,6 +63,19 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
         .split(',')
         .map((phone) => normalizePhone(phone.trim()))
         .toList();
+
+    final ccPhones = _ccController.text
+        .trim()
+        .split(',')
+        .map((phone) => normalizePhone(phone.trim()))
+        .toList();
+
+    final bccPhones = _bccController.text
+        .trim()
+        .split(',')
+        .map((phone) => normalizePhone(phone.trim()))
+        .toList();
+
     final subject = _subjectController.text.trim();
     final body = _bodyController.text.trim();
 
@@ -70,13 +87,16 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
     }
 
     try {
-      await EmailService().sendEmail(fromPhone, toPhones, subject, body);
+      await EmailService()
+          .sendEmail(fromPhone, toPhones, subject, body, ccPhones, bccPhones);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email sent successfully!')),
       );
 
       _toController.clear();
+      _ccController.clear();
+      _bccController.clear();
       _subjectController.clear();
       _bodyController.clear();
       Navigator.pop(context);
@@ -118,6 +138,26 @@ class _ComposeEmailScreenState extends State<ComposeEmailScreen> {
                 labelText: 'To',
                 hintText: 'Recipient Phone Number',
                 prefixIcon: Icon(Icons.person),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _ccController, // CC field
+              decoration: const InputDecoration(
+                labelText: 'CC',
+                hintText: 'CC Phone Numbers (optional)',
+                prefixIcon: Icon(Icons.send),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _bccController, // BCC field
+              decoration: const InputDecoration(
+                labelText: 'BCC',
+                hintText: 'BCC Phone Numbers (optional)',
+                prefixIcon: Icon(Icons.send),
               ),
               keyboardType: TextInputType.phone,
             ),
