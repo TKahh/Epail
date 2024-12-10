@@ -1,18 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:urmail/screens/sent_screen.dart';
 import '../screens/settings_screen.dart';
-import '../services/email_service.dart';
+// import '../services/email_service.dart';
 import 'package:urmail/screens/compose_email_screen.dart';
 import 'package:urmail/screens/trash_screen.dart';
 import 'package:urmail/screens/profile_screen.dart';
 import 'email_detail_screen.dart';
 import 'home_screen.dart';
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   final bool showSentEmails;
 
   const MainScreen({super.key, this.showSentEmails = false});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  String _searchQuery = '';
 
   void _showPopupMenu(BuildContext context, DocumentSnapshot emailDoc) {
     showMenu(
@@ -39,22 +47,24 @@ class MainScreen extends StatelessWidget {
       );
     }
 
-    // Start with the base query
     var query = FirebaseFirestore.instance
         .collection('emails')
         .orderBy('timestamp', descending: true);
 
-    // Modify the query based on whether we're showing sent or received emails
-    if (showSentEmails) {
-        query = query.where('from', isEqualTo: currentUser.phoneNumber);
+    if (widget.showSentEmails) {
+      query = query.where('from', isEqualTo: currentUser.phoneNumber);
     } else {
-        query = query.where('to', arrayContains: currentUser.phoneNumber);
+      query = query.where('to', arrayContains: currentUser.phoneNumber);
+    }
+
+    if (_searchQuery.isNotEmpty) {
+      query = query.where('subject', isGreaterThanOrEqualTo: _searchQuery);
     }
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          showSentEmails ? 'Sent Emails' : 'Inbox',
+          widget.showSentEmails ? 'Sent Emails' : 'Inbox',
           style: const TextStyle(
             fontSize: 50,
             fontFamily: 'Itim',
@@ -64,6 +74,21 @@ class MainScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: ExpandableSearchDelegate(
+                  onSearchChanged: (query) {
+                    setState(() {
+                      _searchQuery = query.trim();
+                    });
+                  },
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -138,12 +163,9 @@ class MainScreen extends StatelessWidget {
               title: const Text('Sent'),
               onTap: () {
                 Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const MainScreen(showSentEmails: true),
-                  ),
-                );
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SentScreen()));
               },
             ),
             ListTile(
@@ -207,7 +229,7 @@ class MainScreen extends StatelessWidget {
               return Card(
                 child: ListTile(
                   title: Text(email['subject'] ?? 'No Subject'),
-                  subtitle: Text(showSentEmails
+                  subtitle: Text(widget.showSentEmails
                       ? 'To: ${email['to'].join(', ')}'
                       : 'From: ${email['from']}'),
                   trailing: const Icon(Icons.arrow_forward),
@@ -244,6 +266,49 @@ class MainScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class ExpandableSearchDelegate extends SearchDelegate {
+  final Function(String) onSearchChanged;
+
+  ExpandableSearchDelegate({required this.onSearchChanged});
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+          onSearchChanged('');
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    onSearchChanged(query);
+    return const SizedBox.shrink();
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    onSearchChanged(query);
+    return ListTile(
+      title: Text('Searching for: $query'),
     );
   }
 }
